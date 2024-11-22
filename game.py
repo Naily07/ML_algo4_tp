@@ -20,6 +20,7 @@ class GamePuzzle:
         self.font_size = 50
         self.background_color = (30, 30, 30)
         self.tile_color = (100, 150, 200)
+        self.selected_tile_color = (255, 0, 0)  # Couleur pour les cases sélectionnées
         self.text_color = (255, 255, 255)
 
         # Initialisation de Pygame
