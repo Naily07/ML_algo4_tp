@@ -15,27 +15,30 @@ class GamePuzzle:
         self.running = True
 
         # Calcul des tailles des cases et de la fenêtre en fonction de la grille
-        self.window_size = 300  # Taille de la fenêtre (peut être ajustée)
+        self.window_size = 500  # Taille de la fenêtre (peut être ajustée)
         self.tile_size = self.window_size // self.grid_size
         self.font_size = 50
         self.background_color = (30, 30, 30)
         self.tile_color = (100, 150, 200)
         self.selected_tile_color = (255, 0, 0)  # Couleur pour les cases sélectionnées
         self.text_color = (255, 255, 255)
-
+    
         # Initialisation de Pygame
         pygame.init()
-        self.screen = pygame.display.set_mode((self.window_size, self.window_size))
+        self.screen = pygame.display.set_mode((self.window_size + self.window_size, self.window_size ))
+        # self.screen = pygame.display.set_mode((self.window_size, self.window_size))
         pygame.display.set_caption(f"Puzzle {self.grid_size}x{self.grid_size}")
         self.font = pygame.font.Font(None, self.font_size)
-
+        self.image = Image.open(self.image_path)
+        self.image_slices = self.image_slicer()
         # Création du puzzle
         self.grid = self.create_puzzle()
+        self.initialGrid = []
 
     def image_slicer(self):
         """Découpe l'image en morceaux pour le puzzle."""
-        image = Image.open(self.image_path)
-        largeur, hauteur = image.size
+        # image = Image.open(self.image_path)
+        largeur, hauteur = self.image.size
 
         morceau_largeur = largeur // self.grid_size
         morceau_hauteur = hauteur // self.grid_size
@@ -47,45 +50,54 @@ class GamePuzzle:
                 upper = i * morceau_hauteur
                 right = (j + 1) * morceau_largeur
                 lower = (i + 1) * morceau_hauteur
-
-                morceau = image.crop((left, upper, right, lower))
+                morceau = self.image.crop((left, upper, right, lower))
                 morceaux.append(pygame.image.fromstring(morceau.tobytes(), morceau.size, morceau.mode))
-
+        morceaux.pop()
+        return morceaux
+    
     def create_puzzle(self):
         """Crée une grille mélangée pour le puzzle."""
-        # tiles = list(range(1, self.grid_size ** 2)) + [0]  # 0 représente l'espace vide
-        # random.shuffle(tiles)
-        # return [tiles[i:i + self.grid_size] for i in range(0, len(tiles), self.grid_size)]
-
-        tiles = self.image_slicer()
+        tiles = self.image_slices[:]  # Utilisez les morceaux pré-générés
+        self.initialGrid = tiles
         tiles.append(None)
         random.shuffle(tiles)
         return [tiles[i:i + self.grid_size] for i in range(0, len(tiles), self.grid_size)]
 
     def draw_puzzle(self):
-        """Dessine la grille de puzzle sur l'écran."""
+        """Dessine la grille de puzzle et l'image originale redimensionnée sur l'écran."""
         self.screen.fill(self.background_color)
+
+        # Dessiner la grille du puzzle
         for row in range(self.grid_size):
             for col in range(self.grid_size):
                 tile = self.grid[row][col]
                 x, y = col * self.tile_size, row * self.tile_size
-                # if tile != 0:  # Ne dessine pas l'espace vide
-                #    pygame.draw.rect(self.screen, self.tile_color, (x, y, self.tile_size, self.tile_size))
-                #    text = self.font.render(str(tile), True, self.text_color)
-                #    text_rect = text.get_rect(center=(x + self.tile_size // 2, y + self.tile_size // 2))
-                #    self.screen.blit(text, text_rect)
-
                 if tile is not None:  # Ne dessine pas l'espace vide
                     self.screen.blit(pygame.transform.scale(tile, (self.tile_size, self.tile_size)), (x, y))
+
+        # Afficher l'image originale redimensionnée
+        original_width = self.window_size   # Largeur fixée pour l'image originale
+        original_height = self.window_size      # Hauteur ajustée proportionnellement
+
+        # Convertir l'image PIL en une surface Pygame si ce n'est pas encore fait
+        if not hasattr(self, 'image_surface'):
+            image_resized = self.image.resize((original_width, original_height))  # Redimensionner
+            self.image_surface = pygame.image.fromstring(image_resized.tobytes(), image_resized.size, image_resized.mode)
+
+        # Blit (dessiner) l'image redimensionnée
+        self.screen.blit(self.image_surface, (self.grid_size * self.tile_size, 0))
+
+        # Mettre à jour l'affichage
         pygame.display.flip()
 
     def move_tile(self, row, col):
         """Déplace une case sélectionnée si elle est adjacente à l'espace vide."""
         empty_row, empty_col = next(
-            (r, c) for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] == 0
+            (r, c) for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] is None
         )
         if (abs(row - empty_row) + abs(col - empty_col)) == 1:
             self.grid[empty_row][empty_col], self.grid[row][col] = self.grid[row][col], self.grid[empty_row][empty_col]
+
 
     def swap_tiles(self, row1, col1, row2, col2):
         """Échange deux cases sélectionnées."""
@@ -93,9 +105,12 @@ class GamePuzzle:
 
     def is_solved(self):
         """Vérifie si le puzzle est résolu."""
-        correct = list(range(1, self.grid_size ** 2)) + [0]
+        # Crée l'ordre correct des morceaux avec l'espace vide à la fin
+        correct_order = self.image_slicer()  
+        correct_order.append(None)  # Ajoutez l'espace vide à la fin
+        # Applatir la grille actuelle
         flat_grid = [tile for row in self.grid for tile in row]
-        return flat_grid == correct
+        return flat_grid == correct_order  # Compare si la grille actuelle correspond à l'ordre correct
 
     def handle_events(self):
         """Gère les événements utilisateur."""
@@ -145,5 +160,5 @@ class GamePuzzle:
 if __name__ == "__main__":
     grid_size = 8  # Exemple de taille de puzzle (4x4)
     swap_interval = 5  # Intervalle pour passer en mode swap
-    game = GamePuzzle(grid_size, swap_interval)
+    game = GamePuzzle(grid_size, swap_interval, "paysage.jpg")
     game.run()
