@@ -1,7 +1,10 @@
 import random
 
-GRID_SIZE = 3  # Taille de la grille
+GRID_SIZE = 3  # Taille par défaut de la grille
 
+class GamePuzzle():
+    def __init__(self) -> None:
+        
 def create_puzzle():
     """Crée une grille mélangée pour le puzzle."""
     tiles = list(range(1, GRID_SIZE**2)) + [0]  # 0 représente l'espace vide
@@ -19,9 +22,8 @@ def move_tile(grid, row, col):
         grid[empty_row][empty_col], grid[row][col] = grid[row][col], grid[empty_row][empty_col]
 
 def swap_tiles(grid, row1, col1, row2, col2):
-    """Échange deux cases adjacentes."""
-    if (abs(row1 - row2) + abs(col1 - col2)) == 1:  # Vérifie qu'elles sont adjacentes
-        grid[row1][col1], grid[row2][col2] = grid[row2][col2], grid[row1][col1]
+    """Échange deux cases sélectionnées."""
+    grid[row1][col1], grid[row2][col2] = grid[row2][col2], grid[row1][col1]
 
 def is_solved(grid):
     """Vérifie si le puzzle est résolu."""
