@@ -1,7 +1,7 @@
 import pygame
 import sys
 from gameMenu import menu_selection
-from gameEngine import create_puzzle, move_tile, swap_tiles, is_solved
+from gameEngine import create_puzzle, move_tile, swap_tiles, is_solved, astar_solver
 
 # Configuration de la fenêtre
 WINDOW_SIZE = 400
@@ -34,7 +34,7 @@ def draw_puzzle(grid, grid_size, tile_size):
 
 def main():
     # Afficher le menu de sélection
-    grid_size, k = menu_selection(screen)
+    grid_size, k, is_ai_mode = menu_selection(screen)
 
     # Configuration dynamique
     tile_size = WINDOW_SIZE // grid_size
@@ -42,20 +42,37 @@ def main():
     move_count = 0
     swap_mode = False
     selected_tiles = []
+    ai_generator = None
+
+    if is_ai_mode:
+        path, steps_taken = astar_solver(grid, grid_size)  # Obtenez les étapes et le nombre de mouvements
+        ai_generator = iter(path)  # Crée un générateur à partir des étapes
+        print(f"L'IA résoudra le puzzle en {steps_taken} mouvements.")
 
     # Boucle principale
     running = True
     while running:
         screen.fill(BACKGROUND_COLOR)
         draw_puzzle(grid, grid_size, tile_size)
+        
         pygame.display.flip()
+
+        # Si en mode IA, afficher chaque étape successivement
+        if is_ai_mode and ai_generator:
+            try:
+                grid = next(ai_generator)  # Obtient la prochaine étape
+                pygame.time.delay(300)  # Pause pour chaque mouvement
+            except StopIteration:
+                print(f"L'IA a résolu le puzzle en {steps_taken} mouvements.")
+                is_ai_mode = False
+                ai_generator = None  # Termine le mode IA
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and not is_ai_mode:
                 x, y = event.pos
                 col, row = x // tile_size, y // tile_size
 
@@ -77,7 +94,7 @@ def main():
                         swap_mode = False
                         print("Swap effectué. Retour au mode normal.")
 
-        if is_solved(grid, grid_size):
+        if is_solved(grid, grid_size) and not is_ai_mode:
             print(f"Félicitations ! Résolu en {move_count} mouvements.")
             running = False
 

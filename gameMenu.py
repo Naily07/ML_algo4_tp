@@ -1,6 +1,7 @@
 import pygame
 import sys
 from uiComponents import draw_text, draw_button, draw_input_box
+from gameEngine import create_puzzle, astar_solver  # Assure-toi que astar_solver est bien importé
 
 # Dimensions de la fenêtre
 WINDOW_WIDTH = 500
@@ -70,11 +71,15 @@ def menu_selection(screen):
         input_rect = pygame.Rect(input_x, input_y, 250, 50)  # Ajustez la largeur si nécessaire
         draw_input_box(screen, input_rect, font, k_value, input_active, placeholder="(exemple: 5)")
 
-
         # Bouton "Commencer"
         start_button_rect = pygame.Rect(label_x, 300, button_width, button_height)
         start_hover = start_button_rect.collidepoint(mouse_pos)
         draw_button(screen, "Commencer le jeu", start_button_rect.x, start_button_rect.y, button_width, button_height, font, is_hovered=start_hover)
+
+        # Bouton "IA"
+        startAi_button_rect = pygame.Rect(label_x, 360, button_width, button_height)
+        startAi_hover = startAi_button_rect.collidepoint(mouse_pos)
+        draw_button(screen, "IA", startAi_button_rect.x, startAi_button_rect.y, button_width, button_height, font, is_hovered=startAi_hover)
 
         pygame.display.flip()
 
@@ -94,13 +99,18 @@ def menu_selection(screen):
                     input_active = False
                 if start_button_rect.collidepoint(event.pos):
                     if selected_grid_size and k_value.isdigit() and int(k_value) > 0:
-                        return selected_grid_size, int(k_value)
+                        return selected_grid_size, int(k_value), False  # Mode manuel
                     else:
                         print("Veuillez sélectionner une taille de puzzle et entrer une valeur valide pour K.")
+                elif startAi_button_rect.collidepoint(event.pos):
+                    if selected_grid_size:
+                        return selected_grid_size, int(k_value) if k_value.isdigit() else None, True  # Mode IA
+                    else:
+                        print("Veuillez sélectionner une taille de puzzle pour utiliser l'IA.")
             elif event.type == pygame.KEYDOWN and input_active:
                 if event.key == pygame.K_BACKSPACE:
                     k_value = k_value[:-1]
                 elif event.unicode.isdigit():
                     k_value += event.unicode
 
-    return selected_grid_size, int(k_value) if k_value.isdigit() else None
+    return selected_grid_size, int(k_value) if k_value.isdigit() else None, False  # Valeurs par défaut pour mode manuel
