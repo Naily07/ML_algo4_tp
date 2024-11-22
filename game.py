@@ -1,11 +1,13 @@
 import pygame
 import sys
 import random
+from PIL import Image
 
 class GamePuzzle:
-    def __init__(self, grid_size, swap_interval):
+    def __init__(self, grid_size, swap_interval, image_path):
         """Initialise le jeu avec une taille de grille et un intervalle de swaps."""
-        self.grid_size = grid_size  # Taille de la grille (par exemple, 3 pour une grille 3x3)
+        self.grid_size = int((grid_size + 1) ** 0.5)  # Taille de la grille (par exemple, 3 pour une grille 3x3)
+        self.image_path = image_path
         self.swap_interval = swap_interval  # Intervalle des swaps
         self.move_count = 0
         self.swap_mode = False  # Indique si le mode swap est actif
@@ -29,9 +31,33 @@ class GamePuzzle:
         # Création du puzzle
         self.grid = self.create_puzzle()
 
+    def image_slicer(self):
+        """Découpe l'image en morceaux pour le puzzle."""
+        image = Image.open(self.image_path)
+        largeur, hauteur = image.size
+
+        morceau_largeur = largeur // self.grid_size
+        morceau_hauteur = hauteur // self.grid_size
+
+        morceaux = []
+        for i in range(self.grid_size):
+            for j in range(self.grid_size):
+                left = j * morceau_largeur
+                upper = i * morceau_hauteur
+                right = (j + 1) * morceau_largeur
+                lower = (i + 1) * morceau_hauteur
+
+                morceau = image.crop((left, upper, right, lower))
+                morceaux.append(pygame.image.fromstring(morceau.tobytes(), morceau.size, morceau.mode))
+
     def create_puzzle(self):
         """Crée une grille mélangée pour le puzzle."""
-        tiles = list(range(1, self.grid_size ** 2)) + [0]  # 0 représente l'espace vide
+        # tiles = list(range(1, self.grid_size ** 2)) + [0]  # 0 représente l'espace vide
+        # random.shuffle(tiles)
+        # return [tiles[i:i + self.grid_size] for i in range(0, len(tiles), self.grid_size)]
+
+        tiles = self.image_slicer()
+        tiles.append(None)
         random.shuffle(tiles)
         return [tiles[i:i + self.grid_size] for i in range(0, len(tiles), self.grid_size)]
 
@@ -42,11 +68,14 @@ class GamePuzzle:
             for col in range(self.grid_size):
                 tile = self.grid[row][col]
                 x, y = col * self.tile_size, row * self.tile_size
-                if tile != 0:  # Ne dessine pas l'espace vide
-                    pygame.draw.rect(self.screen, self.tile_color, (x, y, self.tile_size, self.tile_size))
-                    text = self.font.render(str(tile), True, self.text_color)
-                    text_rect = text.get_rect(center=(x + self.tile_size // 2, y + self.tile_size // 2))
-                    self.screen.blit(text, text_rect)
+                # if tile != 0:  # Ne dessine pas l'espace vide
+                #    pygame.draw.rect(self.screen, self.tile_color, (x, y, self.tile_size, self.tile_size))
+                #    text = self.font.render(str(tile), True, self.text_color)
+                #    text_rect = text.get_rect(center=(x + self.tile_size // 2, y + self.tile_size // 2))
+                #    self.screen.blit(text, text_rect)
+
+                if tile is not None:  # Ne dessine pas l'espace vide
+                    self.screen.blit(pygame.transform.scale(tile, (self.tile_size, self.tile_size)), (x, y))
         pygame.display.flip()
 
     def move_tile(self, row, col):
@@ -113,7 +142,7 @@ class GamePuzzle:
 
 # Exécution du jeu
 if __name__ == "__main__":
-    grid_size = 3  # Exemple de taille de puzzle (4x4)
+    grid_size = 8  # Exemple de taille de puzzle (4x4)
     swap_interval = 5  # Intervalle pour passer en mode swap
     game = GamePuzzle(grid_size, swap_interval)
     game.run()
