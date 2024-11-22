@@ -47,7 +47,7 @@ class NPuzzleKSwap:
 
     def move(self, direction):
         """Déplace la case vide."""
-        i, j = self.find_empty()
+        i, j = self.find_empty() # Return la position de la case 
         if direction == "up" and i > 0:
             self.board[i][j], self.board[i - 1][j] = self.board[i - 1][j], self.board[i][j]
         elif direction == "down" and i < self.size - 1:
