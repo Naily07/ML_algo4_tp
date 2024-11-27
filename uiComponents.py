@@ -14,8 +14,52 @@ INPUT_ACTIVE_COLOR = (220, 220, 220)
 pygame.init()
 small_font = pygame.font.Font(None, 15)
 
+
+def get_gradient_color(start_color, end_color, t):
+    """Calcule une couleur intermédiaire entre start_color et end_color."""
+    r = int(start_color[0] + t * (end_color[0] - start_color[0]))
+    g = int(start_color[1] + t * (end_color[1] - start_color[1]))
+    b = int(start_color[2] + t * (end_color[2] - start_color[2]))
+    return (r, g, b)
+
+
+def draw_text_with_text_gradient(screen, text, x, y, font, start_color, end_color, center=True):
+    """Dessine un texte où chaque caractère a un dégradé de couleurs."""
+    # Calculer la largeur totale du texte pour centrer si nécessaire
+    text_surface = font.render(text, True, (255, 255, 255))  # Texte blanc pour mesure
+    text_width, text_height = text_surface.get_width(), text_surface.get_height()
+
+    if center:
+        x -= text_width // 2
+
+    # Parcourir chaque caractère pour appliquer le dégradé
+    for i, char in enumerate(text):
+        char_surface = font.render(char, True, (255, 255, 255))  # Crée une surface pour le caractère
+        char_width, char_height = char_surface.get_width(), char_surface.get_height()
+
+        # Crée une surface pour le dégradé avec alpha
+        gradient_surface = pygame.Surface((char_width, char_height), pygame.SRCALPHA)
+        
+        # Dessiner le dégradé ligne par ligne
+        for j in range(char_width):
+            t = j / char_width  # Interpolation (0 à 1)
+            r = int(start_color[0] + t * (end_color[0] - start_color[0]))
+            g = int(start_color[1] + t * (end_color[1] - start_color[1]))
+            b = int(start_color[2] + t * (end_color[2] - start_color[2]))
+            color = (r, g, b, 255)  # Ajout de l'alpha (255 pour opaque)
+            pygame.draw.line(gradient_surface, color, (j, 0), (j, char_height))
+
+        # Appliquer le dégradé sur la surface du caractère
+        char_surface.blit(gradient_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        # Dessiner le caractère sur l'écran
+        screen.blit(char_surface, (x, y))
+        x += char_width  # Décaler pour le prochain caractère
+
+
 def draw_text(screen, text, x, y, font=small_font, color=TEXT_COLOR, center=True):
     """Dessine du texte centré ou aligné."""
+    print()
     surface = font.render(text, True, color)
     rect = surface.get_rect(center=(x, y)) if center else (x, y)
     screen.blit(surface, rect)

@@ -43,7 +43,7 @@ def menu_selection(screen):
             button_height, 
             font, 
             is_hovered=button_3_hover, 
-            is_selected=(selected_grid_size == 3)
+            is_selected=(selected_grid_size == 8)
         )
         draw_button(
             screen, 
@@ -54,7 +54,7 @@ def menu_selection(screen):
             button_height, 
             font, 
             is_hovered=button_4_hover, 
-            is_selected=(selected_grid_size == 4)
+            is_selected=(selected_grid_size == 15)
         )
 
         # Label pour K
@@ -90,9 +90,9 @@ def menu_selection(screen):
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button_3_rect.collidepoint(event.pos):
-                    selected_grid_size = 3
+                    selected_grid_size = 8
                 elif button_4_rect.collidepoint(event.pos):
-                    selected_grid_size = 4
+                    selected_grid_size = 15
                 elif input_rect.collidepoint(event.pos):
                     input_active = True
                 else:

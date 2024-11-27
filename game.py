@@ -4,7 +4,7 @@ import random
 from PIL import Image
 
 class GamePuzzle:
-    def __init__(self, grid_size, swap_interval, image_path):
+    def __init__(self, grid_size, swap_interval, image_path, is_ai_mode):
         """Initialise le jeu avec une taille de grille et un intervalle de swaps."""
         self.initialGrid = list(range(1, grid_size + 1) )
         self.grid_size = int((grid_size + 1) ** 0.5)  # Taille de la grille (par exemple, 3 pour une grille 3x3)
@@ -14,7 +14,8 @@ class GamePuzzle:
         self.swap_mode = False  # Indique si le mode swap est actif
         self.selected_tiles = []  # Cases sélectionnées pour un swap
         self.running = True
-
+        self.is_ai_mode = is_ai_mode
+        self.ai_generator = None 
         # Calcul des tailles des cases et de la fenêtre en fonction de la grille
         self.window_size = 500  # Taille de la fenêtre (peut être ajustée)
         self.tile_size = self.window_size // self.grid_size
@@ -25,7 +26,6 @@ class GamePuzzle:
         self.text_color = (255, 255, 255)
     
         # Initialisation de Pygame
-        pygame.init()
         self.screen = pygame.display.set_mode((self.window_size + self.window_size, self.window_size ))
         # self.screen = pygame.display.set_mode((self.window_size, self.window_size))
         pygame.display.set_caption(f"Puzzle {self.grid_size}x{self.grid_size}")
@@ -65,13 +65,15 @@ class GamePuzzle:
     def create_puzzle(self):
         """Crée une grille mélangée pour le puzzle."""
         tiles = self.initialGrid.copy()  # Utilisez les chiffres inital
-        tiles.append(None)
+        tiles.append(0)
         random.shuffle(tiles)
         print("Tiles", tiles)
         return [tiles[i:i + self.grid_size] for i in range(0, len(tiles), self.grid_size)]
 
     def draw_puzzle(self):
         """Dessine la grille de puzzle et l'image originale redimensionnée sur l'écran."""
+        from uiComponents import draw_text
+        from uiComponents import draw_text_with_text_gradient
         self.screen.fill(self.background_color)
 
         # Dessiner la grille du puzzle
@@ -80,7 +82,7 @@ class GamePuzzle:
             for col in range(self.grid_size):
                 tile = self.grid[row][col]
                 x, y = col * self.tile_size, row * self.tile_size
-                if tile is not None:  # Ne dessine pas l'espace vide
+                if tile != 0:  # Ne dessine pas l'espace vide
                     self.screen.blit(pygame.transform.scale(self.object[self.grid[row][col]], (self.tile_size, self.tile_size)), (x, y))
 
         # Afficher l'image originale redimensionnée
@@ -94,7 +96,22 @@ class GamePuzzle:
 
         # Blit (dessiner) l'image redimensionnée
         self.screen.blit(self.image_surface, (self.grid_size * self.tile_size, 0))
-
+        if self.swap_mode:
+            # draw_text(self.screen, "It's Swap Time", 250 - 100, 250 - 20, font=self.font, color=(255, 255, 0), center=False)
+            # Dégradé de bleu nuit à rouge
+            start_color = (255, 255, 139)  # Bleu nuit
+            end_color = (255, 0, 0)    # Rouge
+            draw_text_with_text_gradient(
+                screen=self.screen,
+                text="It's Swap Time!",
+                x=250,  # Position X
+                y=250-20,   # Position Y
+                font=self.font,
+                start_color=start_color,
+                end_color=end_color,
+                center=True
+            )
+            pygame.display.flip() 
         # Mettre à jour l'affichage
         pygame.display.flip()
 
@@ -105,7 +122,7 @@ class GamePuzzle:
         # Recherche de l'espace vide dans la grille
         for r in range(self.grid_size):
             for c in range(self.grid_size):
-                if self.grid[r][c] is None:
+                if self.grid[r][c] == 0:
                     empty_row, empty_col = r, c
                     break
             if empty_row is not None:  # Arrêter la recherche une fois trouvé
@@ -166,21 +183,60 @@ class GamePuzzle:
                         print("Swap effectué. Retour au mode normal.")
 
     def run(self):
+        from gameEngine import astar_solver
         """Boucle principale du jeu."""
+        if self.is_ai_mode:
+            path, steps_taken = astar_solver(self.grid, self.grid_size)  # Obtenez les étapes et le nombre de mouvements
+            print("MODE", self.grid_size, steps_taken)
+            self.ai_generator = iter(path)  # Crée un générateur à partir des étapes
+            print(f"L'IA résoudra le puzzle en {steps_taken} mouvements.")
+
         while self.running:
             self.handle_events()
             self.draw_puzzle()
+            if self.is_ai_mode and self.ai_generator:
+                try:
+                    self.grid = next(self.ai_generator)  # Obtient la prochaine étape
+                    pygame.time.delay(300)  # Pause pour chaque mouvement
+                except StopIteration:
+                    print(f"L'IA a résolu le puzzle en {steps_taken} mouvements.")
+                    self.is_ai_mode = False
+                    self.ai_generator = None  # Termine le mode IA
 
             if self.is_solved():
                 print(f"Félicitations ! Vous avez résolu le puzzle en {self.move_count} mouvements.")
                 self.running = False
+                game.run()
 
         pygame.quit()
 
 
+class Game:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.screen = None
+        self.running = True
+
+    def init_pygame(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.window_size, self.window_size + self.window_size//2))
+        pygame.display.set_caption("Menu Principal")
+
+    def display_menu(self):
+        from gameMenu import menu_selection
+        return menu_selection(self.screen)
+
+    def run(self):
+        from a_star import astar_solver
+        while self.running:
+            self.init_pygame()
+            grid_size, k, is_ai_mode = self.display_menu()
+            puzzle = GamePuzzle(grid_size, k, "paysage.jpg", is_ai_mode)  # Charge le jeu avec les paramètres du menu
+            print("Run puzzle")
+            puzzle.run()
+
 # Exécution du jeu
 if __name__ == "__main__":
-    grid_size = 8  # Exemple de taille de puzzle (4x4)
-    swap_interval = 5  # Intervalle pour passer en mode swap
-    game = GamePuzzle(grid_size, swap_interval, "paysage.jpg")
+    WINDOW_SIZE = 400
+    game = Game(WINDOW_SIZE)
     game.run()
