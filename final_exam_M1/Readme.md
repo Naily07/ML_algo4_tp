@@ -5,6 +5,11 @@ Ce projet implémente un **jeu de morpion (Tic-Tac-Toe)** intégrant :
 - Un **modèle de classification entraîné** avec **Keras** pour imiter les décisions optimales
 
 ---
+## 🌐 Démo en ligne
+
+👉 Joue contre l'IA ici :  
+📎 **[https://tic-tac-toe-minmax.vercel.app/](https://tic-tac-toe-minmax.vercel.app/)** (interface Swagger)
+
 
 ## 📁 Structure du projet
 
