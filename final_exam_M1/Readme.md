@@ -8,7 +8,7 @@ Ce projet implémente un **jeu de morpion (Tic-Tac-Toe)** intégrant :
 ## 🌐 Démo en ligne
 
 👉 Joue contre l'IA ici :  
-📎 **[https://tic-tac-toe-minmax.vercel.app/](https://tic-tac-toe-minmax.vercel.app/)** (interface Swagger)
+📎 **[https://tic-tac-toe-minmax.vercel.app/](https://tic-tac-toe-minmax.vercel.app/)**
 
 
 ## 📁 Structure du projet
